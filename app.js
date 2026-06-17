@@ -558,20 +558,45 @@ async function renderScatter(){
   catch(e){loading.innerHTML=`<span style="color:var(--coral)">Source unreachable.</span>`;return;}
   const pts=[];
   Object.keys(xData.map).forEach(y=>{if(yData.map[y]!=null)pts.push({x:xData.map[y],y:yData.map[y],year:+y});});
-  pts.sort((a,b)=>a.year-b.year);
+  pts.sort((a,b)=>a.x-b.x);
   const note=document.getElementById('scatterNote');
+
+  // compute OLS line of best fit + correlation
+  let fitLine=null, r=null;
   if(pts.length>=3){
-    const r=pearson(pts.map(p=>p.x),pts.map(p=>p.y));
-    note.textContent=`${ECON_MAP[c]||c}: ${pts.length} yearly observations \u00b7 correlation r = ${r.toFixed(2)}. Descriptive only, not an identification strategy.`;
-  }else note.textContent=`Not enough overlapping data for ${ECON_MAP[c]||c} on these two series.`;
+    const xs=pts.map(p=>p.x), ys=pts.map(p=>p.y);
+    r=pearson(xs,ys);
+    const {slope,intercept}=ols(xs,ys);
+    const xmin=Math.min(...xs), xmax=Math.max(...xs);
+    fitLine=[{x:xmin,y:slope*xmin+intercept},{x:xmax,y:slope*xmax+intercept}];
+    const dir = Math.abs(r)<0.15 ? 'no clear relationship' : (slope>0?'positive relationship':'negative relationship');
+    const strength = Math.abs(r)<0.3?'weak':(Math.abs(r)<0.6?'moderate':'strong');
+    note.textContent=`${ECON_MAP[c]||c}: ${pts.length} yearly observations \u00b7 r = ${r.toFixed(2)} (${strength} ${dir}). The line is a least-squares fit. Descriptive only, not an identification strategy.`;
+  } else {
+    note.textContent=`Not enough overlapping data for ${ECON_MAP[c]||c} on these two series.`;
+  }
+
   if(scatterChart)scatterChart.destroy();
-  scatterChart=new Chart(document.getElementById('scatterChart'),{type:'scatter',
-    data:{datasets:[{data:pts,backgroundColor:'#4cc9b0',borderColor:'#4cc9b0',pointRadius:5,pointHoverRadius:7,showLine:true,borderWidth:1,segment:{borderColor:'rgba(76,201,176,0.22)'}}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},
-      tooltip:{backgroundColor:'#0e1419',borderColor:'#28343e',borderWidth:1,titleColor:'#e8edf0',bodyColor:'#9fb0bb',
-        titleFont:{family:fontMono,size:11},bodyFont:{family:fontMono,size:11},padding:10,
-        callbacks:{title:i=>'Year '+i[0].raw.year,label:i=>[`  ${xm.short}: ${fmtVal(i.raw.x,xm.fmt)}`,`  ${ym.short}: ${fmtVal(i.raw.y,ym.fmt)}`]}}},
-      scales:{x:{title:{display:true,text:xm.short,color:'#9fb0bb',font:{family:fontMono,size:11}},
+  const datasets=[{
+    type:'scatter', label:'observations',
+    data:pts, backgroundColor:'#4cc9b0', borderColor:'#4cc9b0',
+    pointRadius:5, pointHoverRadius:7, borderWidth:0
+  }];
+  if(fitLine) datasets.unshift({
+    type:'line', label:'trend',
+    data:fitLine, borderColor:'#e9c46a', borderWidth:2,
+    borderDash:[6,4], pointRadius:0, pointHoverRadius:0, fill:false, tension:0
+  });
+
+  scatterChart=new Chart(document.getElementById('scatterChart'),{
+    data:{datasets},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},
+        tooltip:{backgroundColor:'#0e1419',borderColor:'#28343e',borderWidth:1,titleColor:'#e8edf0',bodyColor:'#9fb0bb',
+          titleFont:{family:fontMono,size:11},bodyFont:{family:fontMono,size:11},padding:10,
+          filter:i=>i.dataset.label==='observations',
+          callbacks:{title:i=>i[0].raw.year?'Year '+i[0].raw.year:'',label:i=>[`  ${xm.short}: ${fmtVal(i.raw.x,xm.fmt)}`,`  ${ym.short}: ${fmtVal(i.raw.y,ym.fmt)}`]}}},
+      scales:{x:{type:'linear',title:{display:true,text:xm.short,color:'#9fb0bb',font:{family:fontMono,size:11}},
           grid:{color:gridColor},ticks:{color:tickColor,font:{family:fontMono,size:10},callback:v=>axisFmt(v,xm.fmt)},border:{display:false}},
         y:{title:{display:true,text:ym.short,color:'#9fb0bb',font:{family:fontMono,size:11}},
           grid:{color:gridColor},ticks:{color:tickColor,font:{family:fontMono,size:10},callback:v=>axisFmt(v,ym.fmt)},border:{display:false}}}}});
@@ -579,6 +604,9 @@ async function renderScatter(){
 }
 function pearson(x,y){const n=x.length,mx=avg(x),my=avg(y);let num=0,dx=0,dy=0;
   for(let i=0;i<n;i++){const a=x[i]-mx,b=y[i]-my;num+=a*b;dx+=a*a;dy+=b*b;}return(dx&&dy)?num/Math.sqrt(dx*dy):0;}
+function ols(x,y){const n=x.length,mx=avg(x),my=avg(y);let num=0,den=0;
+  for(let i=0;i<n;i++){const a=x[i]-mx;num+=a*(y[i]-my);den+=a*a;}
+  const slope=den?num/den:0;return {slope,intercept:my-slope*mx};}
 const avg=a=>a.reduce((s,v)=>s+v,0)/a.length;
 
 /* PULSE */

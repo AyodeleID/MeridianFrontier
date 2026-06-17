@@ -613,6 +613,11 @@ async function buildPulse(){
 /* BOOT */
 function init(){
   document.getElementById('footYear').textContent='\u00a9 '+new Date().getFullYear();
+  const brand=document.getElementById('brandHome');
+  if(brand) brand.addEventListener('click',function(e){
+    e.preventDefault();
+    window.scrollTo({top:0,behavior:'smooth'});
+  });
   buildControls();buildThemes();buildScatter();renderMain();buildPulse();
 }
 document.addEventListener('DOMContentLoaded',init);

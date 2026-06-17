@@ -38,6 +38,7 @@
       <a href="#themes">Questions</a>
       <a href="#builder">Relationships</a>
       <a href="#event">Event Study</a>
+      <a href="#break">Break Finder</a>
       <a href="#about">About</a>
     </nav>
   </div>
@@ -225,10 +226,46 @@
   </div>
 </section>
 
+<!-- STRUCTURAL BREAK DETECTOR -->
+<section class="breakfinder" id="break">
+  <div class="sec-head">
+    <span class="sec-index">05</span>
+    <div>
+      <h3 class="sec-title">Break Finder</h3>
+      <p class="sec-sub">Where the event study asks you to name a year, this finds it for you. Pick an indicator and economy, and it detects the year the trend most likely shifted, computed live with a Chow-test sweep.</p>
+    </div>
+  </div>
+  <div class="builder-shell">
+    <div class="builder-controls">
+      <div class="bc-row">
+        <div class="ctrl-group"><label class="ctrl-label">Indicator</label><select id="bkIndicator" class="ctrl-select"></select></div>
+        <div class="ctrl-group"><label class="ctrl-label">Economy</label><select id="bkCountry" class="ctrl-select"></select></div>
+        <div class="ctrl-group"><label class="ctrl-label">From year</label><input type="number" id="bkFrom" class="ctrl-num" min="1960" max="2020" value="1990" /></div>
+      </div>
+      <button class="btn btn-primary btn-sm" id="bkRun">Find the break</button>
+    </div>
+    <div class="builder-canvas">
+      <div class="canvas-head">
+        <div class="canvas-titlewrap">
+          <span class="domain-tag" id="bkDomain">·</span>
+          <h4 class="canvas-title" id="bkTitle">Break finder</h4>
+          <p class="canvas-source" id="bkSource">·</p>
+        </div>
+      </div>
+      <div class="canvas-plot">
+        <div class="plot-loading" id="bkLoading"><div class="spinner"></div><span>scanning for breaks…</span></div>
+        <canvas id="bkChart"></canvas>
+      </div>
+      <div class="es-readout" id="bkReadout"></div>
+      <p class="builder-note" id="bkNote">The two fitted trend lines meet at the detected break year. This is a descriptive change-point, not proof of a cause; it tells you when the pattern shifted, not why.</p>
+    </div>
+  </div>
+</section>
+
 <!-- ABOUT -->
 <section class="about" id="about">
   <div class="about-inner">
-    <div class="about-index">05</div>
+    <div class="about-index">06</div>
     <div class="about-body">
       <h3 class="about-title">About Meridian Frontier</h3>
       <p>

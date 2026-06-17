@@ -171,24 +171,23 @@ The data model is intentionally small, so adding to it is a one line change in m
 | **An indicator** | `INDICATORS` in `app.js` | Verify the series code returns data first at [data.worldbank.org](https://data.worldbank.org). |
 | **An economy** | `ECONOMIES` in `app.js` | One line: ISO3 code plus display name. |
 | **A question card** | `THEMES` in `app.js` | One entry: domain, title, question, indicator, country set. |
-| **A new data source** | new fetch function | Map the source into the same `{ year: value }` shape the engine expects. Our World in Data CSVs are the cleanest next step. |
+| **A new data source** | new fetch function | Map the source into the same `{ year: value }` shape the engine expects. Any open API with CORS support can plug in. |
 
 ---
 
 ## Roadmap
 
-- [ ] Our World in Data as a second source (climate and energy series the World Bank lags)
-- [ ] UN Comtrade for bilateral trade flows
 - [ ] CBAM and EUDR exposure overlays
 - [ ] Downloadable chart images (PNG export)
 - [ ] Shareable deep links that encode the current Explorer state
+- [ ] Additional World Bank indicators as coverage expands
 
 ---
 
 ## Design notes &amp; honest limits
 
 - **Client side only.** A source that blocks CORS cannot be fetched directly from the browser. That single constraint is why the World Bank is the launch source.
-- **One source at launch.** The Our World in Data and UN Comtrade entries above are roadmap, not current claims.
+- **Single source by design.** The World Bank Open Data API is the sole source. It is open, requires no key, supports direct browser fetching, and refreshes automatically whenever the World Bank publishes new figures.
 - **Descriptive, not causal.** The Relationships view reports correlation and says so. Co-movement is not identification, and the tool is built for asking better questions, not claiming effects.
 - **A research instrument, not a data portal.** It does a focused set of questions well rather than everything shallowly. That focus is the entire point.
 

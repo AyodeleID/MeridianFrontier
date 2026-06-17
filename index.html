@@ -38,7 +38,7 @@
       <a href="#themes">Questions</a>
       <a href="#builder">Relationships</a>
       <a href="#event">Event Study</a>
-      <a href="#break">Break Finder</a>
+      <a href="#break">Structural Break</a>
       <a href="#about">About</a>
     </nav>
   </div>
@@ -172,6 +172,7 @@
         <canvas id="scatterChart"></canvas>
       </div>
       <p class="builder-note" id="scatterNote">Correlation is not causation. This is descriptive, not an identification strategy.</p>
+      <p class="builder-note"><strong>Method:</strong> the line is an ordinary least squares fit; the reported r is the Pearson correlation between the two series.</p>
     </div>
   </div>
 </section>
@@ -221,7 +222,7 @@
         <canvas id="esChart"></canvas>
       </div>
       <div class="es-readout" id="esReadout"></div>
-      <p class="builder-note" id="esNote">Year zero is the event. Values left of zero are before, right are after. A single series is a descriptive trajectory, not a causal estimate; add a comparison economy to view the relative gap.</p>
+      <p class="builder-note" id="esNote"><strong>Method:</strong> the indicator is re-centred so year zero is the event. The readout compares the mean of the pre-period against the post-period (a difference in means); adding a comparison economy reports the difference between the two changes (a difference-in-differences). This is descriptive, not a regression with leads, lags or standard errors, and not a causal estimate.</p>
     </div>
   </div>
 </section>
@@ -231,7 +232,7 @@
   <div class="sec-head">
     <span class="sec-index">05</span>
     <div>
-      <h3 class="sec-title">Break Finder</h3>
+      <h3 class="sec-title">Structural Break</h3>
       <p class="sec-sub">Where the event study asks you to name a year, this finds it for you. Pick an indicator and economy, and it detects the year the trend most likely shifted, computed live with a Chow-test sweep.</p>
     </div>
   </div>
@@ -257,7 +258,7 @@
         <canvas id="bkChart"></canvas>
       </div>
       <div class="es-readout" id="bkReadout"></div>
-      <p class="builder-note" id="bkNote">The two fitted trend lines meet at the detected break year. This is a descriptive change-point, not proof of a cause; it tells you when the pattern shifted, not why.</p>
+      <p class="builder-note" id="bkNote"><strong>Method:</strong> a Chow test applied across every candidate split year (a Quandt-style sup-F sweep). For each year the series is fit as two separate linear trends; the break is the year with the largest F-statistic, where the two-line fit improves most on a single trend. The two fitted lines meet at that year. This is a descriptive change-point, not proof of a cause: it identifies when the pattern shifted, not why.</p>
     </div>
   </div>
 </section>

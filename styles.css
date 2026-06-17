@@ -153,6 +153,24 @@ section{max-width:var(--maxw);margin:0 auto;padding:74px 28px}
 .builder-canvas .canvas-plot{min-height:350px}
 .builder-note{font-family:var(--mono);font-size:.72rem;color:var(--paper-3);margin-top:14px;font-style:italic}
 
+/* EVENT STUDY (reuses builder shell + tokens) */
+.bc-row-4{grid-template-columns:repeat(4,1fr)}
+.es-year{width:100%;text-align:center}
+.es-presets{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.es-preset-label{font-family:var(--mono);font-size:.68rem;color:var(--paper-3);text-transform:uppercase;letter-spacing:.08em}
+.es-chip{font-family:var(--mono);font-size:.72rem;color:var(--paper-2);background:var(--ink);border:1px solid var(--line);padding:6px 11px;border-radius:100px;cursor:pointer;transition:all .15s}
+.es-chip:hover{border-color:var(--signal);color:var(--signal)}
+.es-chip.active{background:var(--signal);color:#06120f;border-color:var(--signal);font-weight:600}
+.es-window{display:flex;align-items:center;gap:14px;margin-bottom:18px;flex-wrap:wrap}
+.es-win-val{font-family:var(--mono);font-size:.78rem;color:var(--paper-2);min-width:78px}
+.es-slider{flex:1;min-width:140px;accent-color:var(--signal);height:4px;cursor:pointer}
+.es-readout{display:flex;flex-wrap:wrap;gap:14px;margin-top:16px}
+.es-stat{background:var(--ink);border:1px solid var(--line);border-radius:var(--radius);padding:11px 15px;flex:1;min-width:130px}
+.es-stat-lab{font-family:var(--mono);font-size:.64rem;color:var(--paper-3);text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:5px}
+.es-stat-val{font-family:var(--mono);font-size:1.15rem;font-weight:600;color:var(--paper)}
+.es-stat-val.pos{color:var(--sage)}
+.es-stat-val.neg{color:var(--coral)}
+
 /* ABOUT */
 .about{border-top:1px solid var(--line)}
 .about-inner{display:grid;grid-template-columns:auto 1fr;gap:40px;max-width:860px;margin:0 auto}
@@ -174,6 +192,7 @@ section{max-width:var(--maxw);margin:0 auto;padding:74px 28px}
   .explorer-shell{grid-template-columns:1fr}
   .explorer-controls{position:static}
   .bc-row{grid-template-columns:1fr}
+  .bc-row-4{grid-template-columns:1fr}
   .mast-nav{display:none}
   .about-inner{grid-template-columns:1fr;gap:18px}
   .hero-meta{gap:30px}

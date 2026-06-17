@@ -37,6 +37,7 @@
       <a href="#explore">Explorer</a>
       <a href="#themes">Questions</a>
       <a href="#builder">Relationships</a>
+      <a href="#event">Event Study</a>
       <a href="#about">About</a>
     </nav>
   </div>
@@ -174,16 +175,67 @@
   </div>
 </section>
 
+<!-- EVENT STUDY -->
+<section class="eventstudy" id="event">
+  <div class="sec-head">
+    <span class="sec-index">04</span>
+    <div>
+      <h3 class="sec-title">Event Study</h3>
+      <p class="sec-sub">Re-centre any indicator on a chosen year and read the trajectory before and after. Add a comparison economy to see the gap. Works on every indicator and every economy.</p>
+    </div>
+  </div>
+  <div class="builder-shell">
+    <div class="builder-controls">
+      <div class="bc-row bc-row-4">
+        <div class="ctrl-group"><label class="ctrl-label">Indicator</label><select id="esIndicator" class="ctrl-select"></select></div>
+        <div class="ctrl-group"><label class="ctrl-label">Economy</label><select id="esCountry" class="ctrl-select"></select></div>
+        <div class="ctrl-group"><label class="ctrl-label">Comparison <span class="ctrl-cap">optional</span></label><select id="esCompare" class="ctrl-select"><option value="">none</option></select></div>
+        <div class="ctrl-group"><label class="ctrl-label">Event year</label><input type="number" id="esYear" class="ctrl-num es-year" min="1961" max="2025" value="2015" /></div>
+      </div>
+      <div class="es-presets">
+        <span class="es-preset-label">policy quick-picks:</span>
+        <button class="es-chip" data-year="2023">EUDR 2023</button>
+        <button class="es-chip" data-year="2026">CBAM 2026</button>
+        <button class="es-chip" data-year="2015">Paris 2015</button>
+        <button class="es-chip" data-year="2008">GFC 2008</button>
+        <button class="es-chip" data-year="2020">COVID 2020</button>
+      </div>
+      <div class="es-window">
+        <label class="ctrl-label">Window</label>
+        <span class="es-win-val">±<span id="esWinNum">7</span> years</span>
+        <input type="range" id="esWindow" min="3" max="12" value="7" class="es-slider" />
+      </div>
+      <button class="btn btn-primary btn-sm" id="esRun">Run event study</button>
+    </div>
+    <div class="builder-canvas">
+      <div class="canvas-head">
+        <div class="canvas-titlewrap">
+          <span class="domain-tag" id="esDomain">·</span>
+          <h4 class="canvas-title" id="esTitle">Event study</h4>
+          <p class="canvas-source" id="esSource">·</p>
+        </div>
+      </div>
+      <div class="canvas-plot">
+        <div class="plot-loading" id="esLoading"><div class="spinner"></div><span>computing…</span></div>
+        <canvas id="esChart"></canvas>
+      </div>
+      <div class="es-readout" id="esReadout"></div>
+      <p class="builder-note" id="esNote">Year zero is the event. Values left of zero are before, right are after. A single series is a descriptive trajectory, not a causal estimate; add a comparison economy to view the relative gap.</p>
+    </div>
+  </div>
+</section>
+
 <!-- ABOUT -->
 <section class="about" id="about">
   <div class="about-inner">
-    <div class="about-index">04</div>
+    <div class="about-index">05</div>
     <div class="about-body">
       <h3 class="about-title">About Meridian Frontier</h3>
       <p>
-        Meridian Frontier is a personal research instrument built and maintained by <strong>Ayodele Idowu</strong>,
-        an economist and data scientist. It is deliberately narrow, covering the questions I work on:
-        trade and climate policy, environmental and agricultural economics, development and inequality,
+        Meridian Frontier is a research instrument built and maintained by <strong>Ayodele Idowu</strong>,
+        an economist and data scientist. It is deliberately narrow, covering the questions at the
+        intersection of trade, environment, agriculture and development, including trade and climate
+        policy, environmental and agricultural economics, structural transformation and inequality,
         rather than trying to mirror the large general data portals.
       </p>
       <p>
@@ -197,8 +249,6 @@
       </p>
       <div class="about-sources">
         <span class="src-tag">World Bank Open Data</span>
-        <span class="src-tag">Our World in Data (planned)</span>
-        <span class="src-tag">UN Comtrade (planned)</span>
       </div>
       <p class="about-link"><a href="https://ayodeleid.com" target="_blank" rel="noopener">ayodeleid.com ↗</a></p>
     </div>

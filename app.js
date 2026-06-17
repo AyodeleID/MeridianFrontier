@@ -610,6 +610,129 @@ async function buildPulse(){
   if(latestUpd) document.getElementById('hmUpdated').textContent=latestUpd;
 }
 
+/* ============================================================ EVENT STUDY */
+let esChart=null;
+function buildEventStudy(){
+  const ei=document.getElementById('esIndicator'),ec=document.getElementById('esCountry'),ex=document.getElementById('esCompare');
+  Object.entries(DOMAINS).forEach(([dk,dv])=>{
+    const og=document.createElement('optgroup');og.label=dv.label;
+    Object.entries(INDICATORS).filter(([,m])=>m.d===dk).forEach(([code,m])=>{
+      const o=document.createElement('option');o.value=code;o.textContent=m.short;og.appendChild(o);});
+    ei.appendChild(og);
+  });
+  ei.value='AG.LND.FRST.ZS';
+  ECONOMIES.forEach(e=>{
+    const o1=document.createElement('option');o1.value=e.c;o1.textContent=e.n;ec.appendChild(o1);
+    const o2=document.createElement('option');o2.value=e.c;o2.textContent=e.n;ex.appendChild(o2);
+  });
+  ec.value='BRA';
+  document.querySelectorAll('.es-chip').forEach(chip=>{
+    chip.addEventListener('click',()=>{
+      document.getElementById('esYear').value=chip.dataset.year;
+      document.querySelectorAll('.es-chip').forEach(c=>c.classList.remove('active'));
+      chip.classList.add('active');
+      renderEventStudy();
+    });
+  });
+  const slider=document.getElementById('esWindow');
+  slider.addEventListener('input',()=>{document.getElementById('esWinNum').textContent=slider.value;});
+  slider.addEventListener('change',renderEventStudy);
+  document.getElementById('esRun').addEventListener('click',renderEventStudy);
+  renderEventStudy();
+}
+
+async function renderEventStudy(){
+  const loading=document.getElementById('esLoading');loading.classList.remove('hidden');
+  const code=document.getElementById('esIndicator').value;
+  const c=document.getElementById('esCountry').value;
+  const comp=document.getElementById('esCompare').value;
+  const evYear=parseInt(document.getElementById('esYear').value,10);
+  const win=parseInt(document.getElementById('esWindow').value,10);
+  const meta=INDICATORS[code];
+  document.getElementById('esTitle').textContent=meta.label;
+  const dtag=document.getElementById('esDomain');
+  dtag.textContent=DOMAINS[meta.d].label;dtag.style.color=DOMAINS[meta.d].color;dtag.style.borderColor=DOMAINS[meta.d].color;
+  const from=evYear-win, to=evYear+win;
+  let main, compData=null;
+  try{
+    main=await fetchSeries(code,c,from,to);
+    if(comp) compData=await fetchSeries(code,comp,from,to);
+  }catch(e){ loading.innerHTML='<span style="color:var(--coral)">Source unreachable.</span>'; return; }
+  document.getElementById('esSource').textContent=
+    main.lastUpdated?('World Bank Open Data \u00b7 refreshed '+main.lastUpdated):'World Bank Open Data';
+  const rel=[]; for(let t=-win;t<=win;t++) rel.push(t);
+  const mainVals=rel.map(t=>{const y=evYear+t;return main.map[y]!=null?main.map[y]:null;});
+  const compVals=compData?rel.map(t=>{const y=evYear+t;return compData.map[y]!=null?compData.map[y]:null;}):null;
+  drawEventChart(rel,mainVals,compVals,meta,c,comp);
+  buildReadout(rel,mainVals,compVals,meta,evYear,c,comp);
+  loading.classList.add('hidden');
+}
+
+function drawEventChart(rel,mainVals,compVals,meta,c,comp){
+  if(esChart)esChart.destroy();
+  const datasets=[{
+    label:ECON_MAP[c]||c,
+    data:mainVals,borderColor:'#4cc9b0',backgroundColor:'#4cc9b0',
+    borderWidth:2.5,pointRadius:0,pointHoverRadius:4,tension:.2,spanGaps:true
+  }];
+  if(compVals) datasets.push({
+    label:ECON_MAP[comp]||comp,
+    data:compVals,borderColor:'#8d99ae',backgroundColor:'#8d99ae',
+    borderWidth:2,borderDash:[5,4],pointRadius:0,pointHoverRadius:4,tension:.2,spanGaps:true
+  });
+  esChart=new Chart(document.getElementById('esChart'),{
+    type:'line',
+    data:{labels:rel.map(t=>t>0?'+'+t:String(t)),datasets},
+    options:{
+      responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      plugins:{
+        legend:{position:'top',align:'start',labels:{color:'#9fb0bb',font:{family:fontMono,size:11},boxWidth:10,boxHeight:10,usePointStyle:true,pointStyle:'rectRounded',padding:16}},
+        tooltip:{backgroundColor:'#0e1419',borderColor:'#28343e',borderWidth:1,titleColor:'#e8edf0',bodyColor:'#9fb0bb',
+          titleFont:{family:fontMono,size:11},bodyFont:{family:fontMono,size:11},padding:10,usePointStyle:true,
+          callbacks:{title:i=>{const t=rel[i[0].dataIndex];return t===0?'Event year':(t>0?'+'+t+' years':t+' years');},
+            label:i=>'  '+i.dataset.label+': '+fmtVal(i.parsed.y,meta.fmt)}}
+      },
+      scales:{
+        x:{grid:{color:ctx=>(ctx.tick&&rel[ctx.index]===0)?'rgba(76,201,176,0.55)':gridColor,
+              lineWidth:ctx=>(ctx.tick&&rel[ctx.index]===0)?2:1},
+           title:{display:true,text:'years relative to event (0 = event year)',color:'#6b7a85',font:{family:fontMono,size:10}},
+           ticks:{color:tickColor,font:{family:fontMono,size:10}},border:{display:false}},
+        y:{grid:{color:gridColor},ticks:{color:tickColor,font:{family:fontMono,size:10},callback:v=>axisFmt(v,meta.fmt)},border:{display:false}}
+      }
+    }
+  });
+}
+
+function buildReadout(rel,mainVals,compVals,meta,evYear,c,comp){
+  const box=document.getElementById('esReadout');box.innerHTML='';
+  const before=mainVals.filter((v,i)=>rel[i]<0&&v!=null);
+  const after=mainVals.filter((v,i)=>rel[i]>0&&v!=null);
+  function stat(lab,val,cls){
+    const d=document.createElement('div');d.className='es-stat';
+    d.innerHTML='<span class="es-stat-lab">'+lab+'</span><span class="es-stat-val '+(cls||'')+'">'+val+'</span>';
+    box.appendChild(d);
+  }
+  if(before.length&&after.length){
+    const avgB=before.reduce((s,v)=>s+v,0)/before.length;
+    const avgA=after.reduce((s,v)=>s+v,0)/after.length;
+    const change=avgA-avgB;
+    stat('Avg before',fmtVal(avgB,meta.fmt));
+    stat('Avg after',fmtVal(avgA,meta.fmt));
+    stat('Change',(change>=0?'+':'')+fmtVal(change,meta.fmt).replace('$',''),change>=0?'pos':'neg');
+    if(compVals){
+      const cb=compVals.filter((v,i)=>rel[i]<0&&v!=null);
+      const ca=compVals.filter((v,i)=>rel[i]>0&&v!=null);
+      if(cb.length&&ca.length){
+        const compChange=(ca.reduce((s,v)=>s+v,0)/ca.length)-(cb.reduce((s,v)=>s+v,0)/cb.length);
+        const dd=change-compChange;
+        stat('Relative gap',(dd>=0?'+':'')+fmtVal(dd,meta.fmt).replace('$',''),dd>=0?'pos':'neg');
+      }
+    }
+  }else{
+    stat('Data','insufficient around '+evYear);
+  }
+}
+
 /* BOOT */
 function init(){
   document.getElementById('footYear').textContent='\u00a9 '+new Date().getFullYear();
@@ -618,6 +741,6 @@ function init(){
     e.preventDefault();
     window.scrollTo({top:0,behavior:'smooth'});
   });
-  buildControls();buildThemes();buildScatter();renderMain();buildPulse();
+  buildControls();buildThemes();buildScatter();buildEventStudy();renderMain();buildPulse();
 }
 document.addEventListener('DOMContentLoaded',init);

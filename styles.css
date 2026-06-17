@@ -37,7 +37,7 @@ em{font-style:italic;color:var(--signal);font-weight:500}
 /* MASTHEAD */
 .masthead{position:sticky;top:0;z-index:100;background:rgba(14,20,25,.84);backdrop-filter:blur(14px) saturate(140%);border-bottom:1px solid var(--line)}
 .mast-inner{max-width:var(--maxw);margin:0 auto;padding:14px 28px;display:flex;align-items:center;justify-content:space-between;gap:24px}
-.brand{display:flex;align-items:center;gap:13px}
+.brand{display:flex;align-items:center;gap:13px;cursor:pointer;text-decoration:none;color:inherit}
 .brand-mark{color:var(--paper-2);display:flex}
 .brand-text h1{font-family:var(--disp);font-weight:600;font-size:1.4rem;letter-spacing:-.01em;line-height:1;font-optical-sizing:auto}
 .brand-sub{font-family:var(--mono);font-size:.62rem;color:var(--paper-3);letter-spacing:.03em}

@@ -761,7 +761,141 @@ function buildReadout(rel,mainVals,compVals,meta,evYear,c,comp){
   }
 }
 
+/* ============================================================ BREAK FINDER */
+let bkChart=null;
+function buildBreakFinder(){
+  const bi=document.getElementById('bkIndicator'),bc=document.getElementById('bkCountry');
+  Object.entries(DOMAINS).forEach(([dk,dv])=>{
+    const og=document.createElement('optgroup');og.label=dv.label;
+    Object.entries(INDICATORS).filter(([,m])=>m.d===dk).forEach(([code,m])=>{
+      const o=document.createElement('option');o.value=code;o.textContent=m.short;og.appendChild(o);});
+    bi.appendChild(og);
+  });
+  bi.value='SP.DYN.LE00.IN';
+  ECONOMIES.forEach(e=>{const o=document.createElement('option');o.value=e.c;o.textContent=e.n;bc.appendChild(o);});
+  bc.value='RWA';
+  document.getElementById('bkRun').addEventListener('click',renderBreakFinder);
+  renderBreakFinder();
+}
+
+function bkLinfit(xs,ys){
+  const n=xs.length; if(n<2) return {slope:0,intercept:ys[0]||0,ssr:0};
+  const mx=xs.reduce((a,b)=>a+b,0)/n, my=ys.reduce((a,b)=>a+b,0)/n;
+  let num=0,den=0;
+  for(let i=0;i<n;i++){const a=xs[i]-mx;num+=a*(ys[i]-my);den+=a*a;}
+  const slope=den?num/den:0, intercept=my-slope*mx;
+  let ssr=0; for(let i=0;i<n;i++){const e=ys[i]-(slope*xs[i]+intercept);ssr+=e*e;}
+  return {slope,intercept,ssr};
+}
+
+function bkDetect(years,vals,minSeg){
+  const n=years.length;
+  if(n < 2*minSeg) return null;
+  const full=bkLinfit(years,vals).ssr;
+  let best=null;
+  for(let k=minSeg;k<=n-minSeg;k++){
+    const s1=bkLinfit(years.slice(0,k),vals.slice(0,k)).ssr;
+    const s2=bkLinfit(years.slice(k),vals.slice(k)).ssr;
+    const split=s1+s2;
+    if(split<=0) continue;
+    const F=((full-split)/2)/(split/(n-4));
+    if(!best||F>best.F) best={idx:k,year:years[k],F,full,split};
+  }
+  return best;
+}
+
+async function renderBreakFinder(){
+  const loading=document.getElementById('bkLoading');loading.classList.remove('hidden');
+  const code=document.getElementById('bkIndicator').value;
+  const c=document.getElementById('bkCountry').value;
+  const from=Math.max(1960,parseInt(document.getElementById('bkFrom').value,10)||1990);
+  const meta=INDICATORS[code];
+  document.getElementById('bkTitle').textContent=meta.label;
+  const dtag=document.getElementById('bkDomain');
+  dtag.textContent=DOMAINS[meta.d].label;dtag.style.color=DOMAINS[meta.d].color;dtag.style.borderColor=DOMAINS[meta.d].color;
+
+  let data;
+  try{ data=await fetchSeries(code,c,from,2024); }
+  catch(e){ loading.innerHTML='<span style="color:var(--coral)">Source unreachable.</span>'; return; }
+  document.getElementById('bkSource').textContent=
+    data.lastUpdated?('World Bank Open Data \u00b7 refreshed '+data.lastUpdated):'World Bank Open Data';
+
+  const years=Object.keys(data.map).map(Number).sort((a,b)=>a-b);
+  const vals=years.map(y=>data.map[y]);
+  const readout=document.getElementById('bkReadout');readout.innerHTML='';
+
+  if(years.length<8){
+    if(bkChart)bkChart.destroy();
+    drawBreakChart(years,vals,null,null,meta,c);
+    const d=document.createElement('div');d.className='es-stat';
+    d.innerHTML='<span class="es-stat-lab">Result</span><span class="es-stat-val">too few points to detect a break</span>';
+    readout.appendChild(d);
+    loading.classList.add('hidden');return;
+  }
+
+  const minSeg=Math.max(3,Math.floor(years.length*0.2));
+  const br=bkDetect(years,vals,minSeg);
+  drawBreakChart(years,vals,br,minSeg,meta,c);
+  buildBreakReadout(readout,br,years,vals,meta);
+  loading.classList.add('hidden');
+}
+
+function drawBreakChart(years,vals,br,minSeg,meta,c){
+  if(bkChart)bkChart.destroy();
+  const datasets=[{
+    type:'scatter',label:ECON_MAP[c]||c,
+    data:years.map((y,i)=>({x:y,y:vals[i]})),
+    backgroundColor:'#4cc9b0',borderColor:'#4cc9b0',pointRadius:4,pointHoverRadius:6,borderWidth:0
+  }];
+  if(br){
+    const k=br.idx;
+    const f1=bkLinfit(years.slice(0,k),vals.slice(0,k));
+    const f2=bkLinfit(years.slice(k),vals.slice(k));
+    const y1a=years[0],y1b=years[k-1],y2a=years[k],y2b=years[years.length-1];
+    datasets.push({type:'line',label:'trend before',
+      data:[{x:y1a,y:f1.slope*y1a+f1.intercept},{x:y1b,y:f1.slope*y1b+f1.intercept}],
+      borderColor:'#e9c46a',borderWidth:2,pointRadius:0,fill:false,tension:0});
+    datasets.push({type:'line',label:'trend after',
+      data:[{x:y2a,y:f2.slope*y2a+f2.intercept},{x:y2b,y:f2.slope*y2b+f2.intercept}],
+      borderColor:'#e07a5f',borderWidth:2,pointRadius:0,fill:false,tension:0});
+  }
+  bkChart=new Chart(document.getElementById('bkChart'),{
+    data:{datasets},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'top',align:'start',labels:{color:'#9fb0bb',font:{family:fontMono,size:11},boxWidth:10,boxHeight:10,usePointStyle:true,pointStyle:'rectRounded',padding:14,filter:it=>it.text!=='trend before'&&it.text!=='trend after'?true:true}},
+        tooltip:{backgroundColor:'#0e1419',borderColor:'#28343e',borderWidth:1,titleColor:'#e8edf0',bodyColor:'#9fb0bb',
+          titleFont:{family:fontMono,size:11},bodyFont:{family:fontMono,size:11},padding:10,
+          filter:i=>i.dataset.type==='scatter',
+          callbacks:{title:i=>'Year '+i[0].raw.x,label:i=>'  '+fmtVal(i.raw.y,meta.fmt)}}},
+      scales:{
+        x:{type:'linear',grid:{color:ctx=>(br&&ctx.tick&&Math.round(ctx.tick.value)===br.year)?'rgba(224,122,95,0.6)':gridColor,
+              lineWidth:ctx=>(br&&ctx.tick&&Math.round(ctx.tick.value)===br.year)?2:1},
+           ticks:{color:tickColor,font:{family:fontMono,size:10},callback:v=>v},border:{display:false}},
+        y:{grid:{color:gridColor},ticks:{color:tickColor,font:{family:fontMono,size:10},callback:v=>axisFmt(v,meta.fmt)},border:{display:false}}}}
+  });
+}
+
+function buildBreakReadout(box,br,years,vals,meta){
+  function stat(lab,val,cls){
+    const d=document.createElement('div');d.className='es-stat';
+    d.innerHTML='<span class="es-stat-lab">'+lab+'</span><span class="es-stat-val '+(cls||'')+'">'+val+'</span>';
+    box.appendChild(d);
+  }
+  if(!br){ stat('Result','no clear break detected'); return; }
+  const k=br.idx;
+  const f1=bkLinfit(years.slice(0,k),vals.slice(0,k));
+  const f2=bkLinfit(years.slice(k),vals.slice(k));
+  // slope per year, direction of change
+  const improve=br.full>0?Math.min(99,Math.round(100*(1-br.split/br.full))):0;
+  stat('Break year',String(br.year));
+  const trendWord=s=>s>0.0001?'rising':(s<-0.0001?'falling':'flat');
+  stat('Before',trendWord(f1.slope));
+  stat('After',trendWord(f2.slope));
+  stat('Fit gain',improve+'%');
+}
+
 /* BOOT */
+
 function init(){
   document.getElementById('footYear').textContent='\u00a9 '+new Date().getFullYear();
   const brand=document.getElementById('brandHome');
@@ -769,6 +903,6 @@ function init(){
     e.preventDefault();
     window.scrollTo({top:0,behavior:'smooth'});
   });
-  buildControls();buildThemes();buildScatter();buildEventStudy();renderMain();buildPulse();
+  buildControls();buildThemes();buildScatter();buildEventStudy();buildBreakFinder();renderMain();buildPulse();
 }
 document.addEventListener('DOMContentLoaded',init);

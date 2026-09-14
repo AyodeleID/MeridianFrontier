@@ -398,7 +398,18 @@ async function fetchAll(indicator, countries, from, to){
 }
 
 /* MAIN CHART */
-const gridColor='rgba(40,52,62,0.55)', tickColor='#6b7a85', fontMono="'IBM Plex Mono', monospace";
+const fontMono="'IBM Plex Mono', monospace";
+function cssVar(name){return getComputedStyle(document.documentElement).getPropertyValue(name).trim();}
+function chartColors(){
+  return {
+    grid:cssVar('--chart-grid'), tick:cssVar('--chart-tick'),
+    tipBg:cssVar('--chart-tip-bg'), tipLine:cssVar('--chart-tip-line'),
+    tipTitle:cssVar('--chart-tip-title'), tipBody:cssVar('--chart-tip-body'),
+    legend:cssVar('--chart-legend')
+  };
+}
+// legacy names kept as getters so existing code works
+let gridColor=chartColors().grid, tickColor=chartColors().tick;
 
 async function renderMain(){
   const loading=document.getElementById('plotLoading'); loading.classList.remove('hidden');
@@ -445,13 +456,13 @@ function drawBar(dataOut,meta){
 function baseOpts(meta){
   return {responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
     plugins:{legend:{position:'top',align:'start',
-      labels:{color:'#9fb0bb',font:{family:fontMono,size:11},boxWidth:10,boxHeight:10,usePointStyle:true,pointStyle:'rectRounded',padding:16}},
+      labels:{color:cssVar('--chart-legend'),font:{family:fontMono,size:11},boxWidth:10,boxHeight:10,usePointStyle:true,pointStyle:'rectRounded',padding:16}},
       tooltip:tooltipCfg(meta)},
     scales:{x:{grid:{color:gridColor},ticks:{color:tickColor,font:{family:fontMono,size:10},maxTicksLimit:12},border:{display:false}},
       y:{grid:{color:gridColor},ticks:{color:tickColor,font:{family:fontMono,size:10},callback:v=>axisFmt(v,meta.fmt)},border:{display:false}}}};
 }
 function tooltipCfg(meta){
-  return {backgroundColor:'#0e1419',borderColor:'#28343e',borderWidth:1,titleColor:'#e8edf0',bodyColor:'#9fb0bb',
+  return {backgroundColor:cssVar('--chart-tip-bg'),borderColor:cssVar('--chart-tip-line'),borderWidth:1,titleColor:cssVar('--chart-tip-title'),bodyColor:cssVar('--chart-tip-body'),
     titleFont:{family:fontMono,size:11},bodyFont:{family:fontMono,size:11},padding:10,boxPadding:5,usePointStyle:true,
     callbacks:{label:c=>`  ${c.dataset.label||''}: ${fmtVal(c.parsed.y,meta.fmt)}`}};
 }
@@ -584,7 +595,7 @@ async function renderScatter(){
   }];
   if(fitLine) datasets.unshift({
     type:'line', label:'trend',
-    data:fitLine, borderColor:'#e9c46a', borderWidth:2,
+    data:fitLine, borderColor:cssVar('--gold'), borderWidth:2,
     borderDash:[6,4], pointRadius:0, pointHoverRadius:0, fill:false, tension:0
   });
 
@@ -592,13 +603,13 @@ async function renderScatter(){
     data:{datasets},
     options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},
-        tooltip:{backgroundColor:'#0e1419',borderColor:'#28343e',borderWidth:1,titleColor:'#e8edf0',bodyColor:'#9fb0bb',
+        tooltip:{backgroundColor:cssVar('--chart-tip-bg'),borderColor:cssVar('--chart-tip-line'),borderWidth:1,titleColor:cssVar('--chart-tip-title'),bodyColor:cssVar('--chart-tip-body'),
           titleFont:{family:fontMono,size:11},bodyFont:{family:fontMono,size:11},padding:10,
           filter:i=>i.dataset.label==='observations',
           callbacks:{title:i=>i[0].raw.year?'Year '+i[0].raw.year:'',label:i=>[`  ${xm.short}: ${fmtVal(i.raw.x,xm.fmt)}`,`  ${ym.short}: ${fmtVal(i.raw.y,ym.fmt)}`]}}},
-      scales:{x:{type:'linear',title:{display:true,text:xm.short,color:'#9fb0bb',font:{family:fontMono,size:11}},
+      scales:{x:{type:'linear',title:{display:true,text:xm.short,color:cssVar('--chart-tip-body'),font:{family:fontMono,size:11}},
           grid:{color:gridColor},ticks:{color:tickColor,font:{family:fontMono,size:10},callback:v=>axisFmt(v,xm.fmt)},border:{display:false}},
-        y:{title:{display:true,text:ym.short,color:'#9fb0bb',font:{family:fontMono,size:11}},
+        y:{title:{display:true,text:ym.short,color:cssVar('--chart-tip-body'),font:{family:fontMono,size:11}},
           grid:{color:gridColor},ticks:{color:tickColor,font:{family:fontMono,size:10},callback:v=>axisFmt(v,ym.fmt)},border:{display:false}}}}});
   loading.classList.add('hidden');
 }
@@ -714,8 +725,8 @@ function drawEventChart(rel,mainVals,compVals,meta,c,comp){
     options:{
       responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
       plugins:{
-        legend:{position:'top',align:'start',labels:{color:'#9fb0bb',font:{family:fontMono,size:11},boxWidth:10,boxHeight:10,usePointStyle:true,pointStyle:'rectRounded',padding:16}},
-        tooltip:{backgroundColor:'#0e1419',borderColor:'#28343e',borderWidth:1,titleColor:'#e8edf0',bodyColor:'#9fb0bb',
+        legend:{position:'top',align:'start',labels:{color:cssVar('--chart-legend'),font:{family:fontMono,size:11},boxWidth:10,boxHeight:10,usePointStyle:true,pointStyle:'rectRounded',padding:16}},
+        tooltip:{backgroundColor:cssVar('--chart-tip-bg'),borderColor:cssVar('--chart-tip-line'),borderWidth:1,titleColor:cssVar('--chart-tip-title'),bodyColor:cssVar('--chart-tip-body'),
           titleFont:{family:fontMono,size:11},bodyFont:{family:fontMono,size:11},padding:10,usePointStyle:true,
           callbacks:{title:i=>{const t=rel[i[0].dataIndex];return t===0?'Event year':(t>0?'+'+t+' years':t+' years');},
             label:i=>'  '+i.dataset.label+': '+fmtVal(i.parsed.y,meta.fmt)}}
@@ -854,16 +865,16 @@ function drawBreakChart(years,vals,br,minSeg,meta,c){
     const y1a=years[0],y1b=years[k-1],y2a=years[k],y2b=years[years.length-1];
     datasets.push({type:'line',label:'trend before',
       data:[{x:y1a,y:f1.slope*y1a+f1.intercept},{x:y1b,y:f1.slope*y1b+f1.intercept}],
-      borderColor:'#e9c46a',borderWidth:2,pointRadius:0,fill:false,tension:0});
+      borderColor:cssVar('--gold'),borderWidth:2,pointRadius:0,fill:false,tension:0});
     datasets.push({type:'line',label:'trend after',
       data:[{x:y2a,y:f2.slope*y2a+f2.intercept},{x:y2b,y:f2.slope*y2b+f2.intercept}],
-      borderColor:'#e07a5f',borderWidth:2,pointRadius:0,fill:false,tension:0});
+      borderColor:cssVar('--coral'),borderWidth:2,pointRadius:0,fill:false,tension:0});
   }
   bkChart=new Chart(document.getElementById('bkChart'),{
     data:{datasets},
     options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{position:'top',align:'start',labels:{color:'#9fb0bb',font:{family:fontMono,size:11},boxWidth:10,boxHeight:10,usePointStyle:true,pointStyle:'rectRounded',padding:14,filter:it=>it.text!=='trend before'&&it.text!=='trend after'?true:true}},
-        tooltip:{backgroundColor:'#0e1419',borderColor:'#28343e',borderWidth:1,titleColor:'#e8edf0',bodyColor:'#9fb0bb',
+      plugins:{legend:{position:'top',align:'start',labels:{color:cssVar('--chart-legend'),font:{family:fontMono,size:11},boxWidth:10,boxHeight:10,usePointStyle:true,pointStyle:'rectRounded',padding:14,filter:it=>it.text!=='trend before'&&it.text!=='trend after'?true:true}},
+        tooltip:{backgroundColor:cssVar('--chart-tip-bg'),borderColor:cssVar('--chart-tip-line'),borderWidth:1,titleColor:cssVar('--chart-tip-title'),bodyColor:cssVar('--chart-tip-body'),
           titleFont:{family:fontMono,size:11},bodyFont:{family:fontMono,size:11},padding:10,
           filter:i=>i.dataset.type==='scatter',
           callbacks:{title:i=>'Year '+i[0].raw.x,label:i=>'  '+fmtVal(i.raw.y,meta.fmt)}}},
@@ -894,10 +905,42 @@ function buildBreakReadout(box,br,years,vals,meta){
   stat('Fit gain',improve+'%');
 }
 
+/* ============================================================ THEME */
+function refreshChartVars(){ gridColor=cssVar('--chart-grid'); tickColor=cssVar('--chart-tick'); }
+function redrawAllCharts(){
+  refreshChartVars();
+  if(typeof renderMain==='function') renderMain();
+  if(typeof renderScatter==='function') renderScatter();
+  if(typeof renderEventStudy==='function') renderEventStudy();
+  if(typeof renderBreakFinder==='function') renderBreakFinder();
+}
+function applyTheme(theme){
+  if(theme==='light') document.documentElement.setAttribute('data-theme','light');
+  else document.documentElement.removeAttribute('data-theme');
+  try{ localStorage.setItem('mf-theme', theme); }catch(e){}
+}
+function initTheme(){
+  let saved=null;
+  try{ saved=localStorage.getItem('mf-theme'); }catch(e){}
+  if(saved){ applyTheme(saved); }
+  else{
+    const prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+    applyTheme(prefersLight?'light':'dark');
+  }
+  const btn=document.getElementById('themeToggle');
+  if(btn) btn.addEventListener('click',()=>{
+    const isLight=document.documentElement.getAttribute('data-theme')==='light';
+    applyTheme(isLight?'dark':'light');
+    redrawAllCharts();
+  });
+}
+
 /* BOOT */
 
 function init(){
   document.getElementById('footYear').textContent='\u00a9 '+new Date().getFullYear();
+  initTheme();
+  refreshChartVars();
   const brand=document.getElementById('brandHome');
   if(brand) brand.addEventListener('click',function(e){
     e.preventDefault();
